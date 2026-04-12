@@ -1,0 +1,3 @@
+[workspace]
+members = ["crates/cowork-cli"]
+resolver = "2"
