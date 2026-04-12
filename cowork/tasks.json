@@ -10,6 +10,16 @@
       "id": "task-0001",
       "goal": "first real appended task",
       "status": "queued"
+    },
+    {
+      "id": "task-0002",
+      "goal": "prove workflow step 1",
+      "status": "queued"
+    },
+    {
+      "id": "task-0003",
+      "goal": "prove workflow step 2",
+      "status": "queued"
     }
   ]
 }
