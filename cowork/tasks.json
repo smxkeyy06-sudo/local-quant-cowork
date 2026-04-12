@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "seed-001",
+      "goal": "implement durable task append flow",
+      "status": "queued"
+    }
+  ]
+}
