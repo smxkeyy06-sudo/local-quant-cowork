@@ -5,6 +5,11 @@
       "id": "seed-001",
       "goal": "implement durable task append flow",
       "status": "queued"
+    },
+    {
+      "id": "task-0001",
+      "goal": "first real appended task",
+      "status": "queued"
     }
   ]
 }
