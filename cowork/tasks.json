@@ -35,6 +35,16 @@
       "id": "task-0006",
       "goal": "doctor patch verification",
       "status": "queued"
+    },
+    {
+      "id": "task-0007",
+      "goal": "obsidian sync verification",
+      "status": "queued"
+    },
+    {
+      "id": "task-0008",
+      "goal": "auto sync test",
+      "status": "queued"
     }
   ]
 }
