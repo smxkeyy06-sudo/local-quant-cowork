@@ -9,6 +9,7 @@
 - Loads and validates `cowork/tasks.json`.
 - Appends a new queued task and writes pretty JSON back to `cowork/tasks.json`.
 - Prints a JSON success result with `id`, `goal`, `status`, and `total_task_count`.
+- If `scripts/sync_obsidian.py` exists, attempts to run it after append; sync failures are warnings and do not fail task append.
 
 ## `cowork doctor`
 - Reports repo root and memory directory.

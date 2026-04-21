@@ -45,6 +45,11 @@
       "id": "task-0008",
       "goal": "auto sync test",
       "status": "queued"
+    },
+    {
+      "id": "task-0009",
+      "goal": "auto sync test",
+      "status": "queued"
     }
   ]
 }
