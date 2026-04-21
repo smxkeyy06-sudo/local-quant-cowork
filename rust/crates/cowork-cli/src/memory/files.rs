@@ -1,3 +1,4 @@
+use std::collections::{BTreeMap, HashSet};
 use std::fs;
 use std::path::Path;
 
@@ -5,6 +6,7 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
 pub const REQUIRED_MEMORY_FILES: [&str; 3] = ["mission.md", "context.md", "tasks.json"];
+pub const VALID_TASK_STATUSES: [&str; 4] = ["queued", "active", "done", "blocked"];
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TaskItem {
@@ -19,14 +21,21 @@ pub struct TaskFile {
     pub tasks: Vec<TaskItem>,
 }
 
-pub fn assert_required_files(memory_dir: &Path) -> Result<()> {
-    for rel in REQUIRED_MEMORY_FILES {
-        let p = memory_dir.join(rel);
-        if !p.exists() {
-            anyhow::bail!("missing required memory file: {}", p.display());
-        }
+#[derive(Debug, Clone)]
+pub struct TaskAudit {
+    pub total: usize,
+    pub status_counts: BTreeMap<String, usize>,
+    pub duplicate_ids: Vec<String>,
+    pub invalid_statuses: Vec<String>,
+    pub empty_goal_ids: Vec<String>,
+}
+
+impl TaskAudit {
+    pub fn is_valid(&self) -> bool {
+        self.duplicate_ids.is_empty()
+            && self.invalid_statuses.is_empty()
+            && self.empty_goal_ids.is_empty()
     }
-    Ok(())
 }
 
 pub fn read_text(memory_dir: &Path, name: &str) -> Result<String> {
@@ -34,15 +43,18 @@ pub fn read_text(memory_dir: &Path, name: &str) -> Result<String> {
     fs::read_to_string(&file).with_context(|| format!("failed to read file: {}", file.display()))
 }
 
-pub fn read_tasks(memory_dir: &Path) -> Result<TaskFile> {
+pub fn parse_tasks(memory_dir: &Path) -> Result<TaskFile> {
     let file = memory_dir.join("tasks.json");
     let raw = fs::read_to_string(&file)
         .with_context(|| format!("failed to read tasks file: {}", file.display()))?;
     let parsed: TaskFile = serde_json::from_str(&raw)
         .with_context(|| format!("failed to parse tasks file: {}", file.display()))?;
+    Ok(parsed)
+}
 
+pub fn read_tasks(memory_dir: &Path) -> Result<TaskFile> {
+    let parsed = parse_tasks(memory_dir)?;
     validate_task_file(&parsed)?;
-
     Ok(parsed)
 }
 
@@ -77,6 +89,45 @@ pub fn append_task(memory_dir: &Path, goal: &str) -> Result<TaskItem> {
     Ok(new_task)
 }
 
+pub fn audit_tasks(tasks: &TaskFile) -> TaskAudit {
+    let mut status_counts = BTreeMap::new();
+    let mut seen = HashSet::new();
+    let mut duplicate_ids = Vec::new();
+    let mut invalid_statuses = Vec::new();
+    let mut empty_goal_ids = Vec::new();
+
+    for task in &tasks.tasks {
+        *status_counts.entry(task.status.clone()).or_insert(0) += 1;
+
+        if !seen.insert(task.id.clone()) {
+            duplicate_ids.push(task.id.clone());
+        }
+
+        if !VALID_TASK_STATUSES.contains(&task.status.as_str()) {
+            invalid_statuses.push(format!("{}:{}", task.id, task.status));
+        }
+
+        if task.goal.trim().is_empty() {
+            empty_goal_ids.push(task.id.clone());
+        }
+    }
+
+    duplicate_ids.sort();
+    duplicate_ids.dedup();
+    invalid_statuses.sort();
+    invalid_statuses.dedup();
+    empty_goal_ids.sort();
+    empty_goal_ids.dedup();
+
+    TaskAudit {
+        total: tasks.tasks.len(),
+        status_counts,
+        duplicate_ids,
+        invalid_statuses,
+        empty_goal_ids,
+    }
+}
+
 fn validate_task_file(tasks: &TaskFile) -> Result<()> {
     if tasks.version == 0 {
         anyhow::bail!("invalid tasks file version: 0");
@@ -91,6 +142,9 @@ fn validate_task_file(tasks: &TaskFile) -> Result<()> {
         }
         if task.status.trim().is_empty() {
             anyhow::bail!("task status cannot be empty");
+        }
+        if !VALID_TASK_STATUSES.contains(&task.status.as_str()) {
+            anyhow::bail!("invalid task status: {}", task.status);
         }
     }
 
@@ -126,7 +180,7 @@ mod tests {
     use std::path::PathBuf;
     use std::time::{SystemTime, UNIX_EPOCH};
 
-    use super::{append_task, read_tasks};
+    use super::{append_task, audit_tasks, read_tasks, TaskFile, TaskItem};
 
     fn temp_dir() -> PathBuf {
         let uniq = SystemTime::now()
@@ -188,5 +242,30 @@ mod tests {
         assert_eq!(loaded.tasks[1].id, "task-0001");
 
         fs::remove_dir_all(&dir).expect("cleanup");
+    }
+
+    #[test]
+    fn audit_tasks_reports_duplicates_and_invalids() {
+        let tasks = TaskFile {
+            version: 1,
+            tasks: vec![
+                TaskItem {
+                    id: "task-0001".to_string(),
+                    goal: "a".to_string(),
+                    status: "queued".to_string(),
+                },
+                TaskItem {
+                    id: "task-0001".to_string(),
+                    goal: " ".to_string(),
+                    status: "bad".to_string(),
+                },
+            ],
+        };
+
+        let audit = audit_tasks(&tasks);
+        assert_eq!(audit.total, 2);
+        assert_eq!(audit.duplicate_ids, vec!["task-0001"]);
+        assert_eq!(audit.invalid_statuses, vec!["task-0001:bad"]);
+        assert_eq!(audit.empty_goal_ids, vec!["task-0001"]);
     }
 }

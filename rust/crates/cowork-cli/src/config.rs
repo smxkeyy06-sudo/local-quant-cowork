@@ -17,4 +17,12 @@ impl Config {
             memory_dir,
         }
     }
+
+    pub fn memory_file(&self, name: &str) -> PathBuf {
+        self.memory_dir.join(name)
+    }
+
+    pub fn repo_file(&self, rel: &str) -> PathBuf {
+        self.repo_root.join(rel)
+    }
 }

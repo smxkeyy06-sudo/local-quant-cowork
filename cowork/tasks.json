@@ -20,6 +20,21 @@
       "id": "task-0003",
       "goal": "prove workflow step 2",
       "status": "queued"
+    },
+    {
+      "id": "task-0004",
+      "goal": "doctor follow-up test",
+      "status": "queued"
+    },
+    {
+      "id": "task-0005",
+      "goal": "doctor follow-up test",
+      "status": "queued"
+    },
+    {
+      "id": "task-0006",
+      "goal": "doctor patch verification",
+      "status": "queued"
     }
   ]
 }
