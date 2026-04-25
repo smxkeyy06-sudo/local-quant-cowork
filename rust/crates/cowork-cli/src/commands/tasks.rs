@@ -12,7 +12,12 @@ pub fn run(runtime: &Runtime) -> Result<()> {
     println!("by_status: {}", format_status_counts(&audit));
 
     for task in tasks.tasks {
-        println!("- {} [{}] {}", task.id, task.status, task.goal);
+        let timestamp = task
+            .updated_at
+            .as_deref()
+            .map(|updated_at| format!(" updated:{updated_at}"))
+            .unwrap_or_default();
+        println!("- {} [{}] {}{}", task.id, task.status, task.goal, timestamp);
     }
 
     Ok(())

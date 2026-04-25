@@ -2,6 +2,7 @@ use std::collections::{BTreeMap, HashSet};
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
@@ -14,6 +15,10 @@ pub struct TaskItem {
     pub id: String,
     pub goal: String,
     pub status: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub updated_at: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -111,9 +116,17 @@ pub fn append_context_note(
 }
 
 pub fn append_task(memory_dir: &Path, goal: &str) -> Result<TaskItem> {
+    append_task_with_timestamp(memory_dir, goal, &unix_timestamp()?)
+}
+
+fn append_task_with_timestamp(memory_dir: &Path, goal: &str, timestamp: &str) -> Result<TaskItem> {
     let goal = goal.trim();
     if goal.is_empty() {
         anyhow::bail!("goal is required");
+    }
+    let timestamp = timestamp.trim();
+    if timestamp.is_empty() {
+        anyhow::bail!("timestamp is required");
     }
 
     let mut tasks = read_tasks(memory_dir)?;
@@ -123,6 +136,8 @@ pub fn append_task(memory_dir: &Path, goal: &str) -> Result<TaskItem> {
         id,
         goal: goal.to_string(),
         status: "queued".to_string(),
+        created_at: Some(timestamp.to_string()),
+        updated_at: Some(timestamp.to_string()),
     };
 
     tasks.tasks.push(new_task.clone());
@@ -136,6 +151,15 @@ pub fn update_task_status(
     task_id: &str,
     status: &str,
 ) -> Result<TaskStatusUpdate> {
+    update_task_status_with_timestamp(memory_dir, task_id, status, &unix_timestamp()?)
+}
+
+fn update_task_status_with_timestamp(
+    memory_dir: &Path,
+    task_id: &str,
+    status: &str,
+    timestamp: &str,
+) -> Result<TaskStatusUpdate> {
     let task_id = task_id.trim();
     if task_id.is_empty() {
         anyhow::bail!("task id is required");
@@ -147,6 +171,10 @@ pub fn update_task_status(
             "invalid task status: {status} (allowed: {})",
             VALID_TASK_STATUSES.join(", ")
         );
+    }
+    let timestamp = timestamp.trim();
+    if timestamp.is_empty() {
+        anyhow::bail!("timestamp is required");
     }
 
     let mut tasks = read_tasks(memory_dir)?;
@@ -164,6 +192,7 @@ pub fn update_task_status(
     };
 
     task.status = status.to_string();
+    task.updated_at = Some(timestamp.to_string());
     write_tasks(memory_dir, &tasks)?;
 
     Ok(updated)
@@ -254,6 +283,14 @@ fn next_task_id(tasks: &[TaskItem]) -> String {
     }
 }
 
+fn unix_timestamp() -> Result<String> {
+    let seconds = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .context("system clock is before unix epoch")?
+        .as_secs();
+    Ok(format!("unix:{seconds}"))
+}
+
 #[cfg(test)]
 mod tests {
     use std::fs;
@@ -261,8 +298,8 @@ mod tests {
     use std::time::{SystemTime, UNIX_EPOCH};
 
     use super::{
-        append_context_note, append_task, audit_tasks, read_tasks, update_task_status, TaskFile,
-        TaskItem,
+        append_context_note, append_task, append_task_with_timestamp, audit_tasks, read_tasks,
+        update_task_status, update_task_status_with_timestamp, TaskFile, TaskItem,
     };
 
     fn temp_dir() -> PathBuf {
@@ -348,14 +385,78 @@ mod tests {
         )
         .expect("seed tasks.json");
 
-        let created = append_task(&dir, "new objective").expect("append task");
+        let created =
+            append_task_with_timestamp(&dir, "new objective", "unix:100").expect("append task");
         assert_eq!(created.id, "task-0001");
         assert_eq!(created.goal, "new objective");
         assert_eq!(created.status, "queued");
+        assert_eq!(created.created_at.as_deref(), Some("unix:100"));
+        assert_eq!(created.updated_at.as_deref(), Some("unix:100"));
 
         let loaded = read_tasks(&dir).expect("read after append");
         assert_eq!(loaded.tasks.len(), 2);
         assert_eq!(loaded.tasks[1].id, "task-0001");
+        assert_eq!(loaded.tasks[1].created_at.as_deref(), Some("unix:100"));
+        assert_eq!(loaded.tasks[1].updated_at.as_deref(), Some("unix:100"));
+
+        fs::remove_dir_all(&dir).expect("cleanup");
+    }
+
+    #[test]
+    fn append_task_adds_current_timestamps() {
+        let dir = temp_dir();
+        fs::create_dir_all(&dir).expect("create dir");
+
+        fs::write(
+            dir.join("tasks.json"),
+            r#"{
+  "version": 1,
+  "tasks": []
+}
+"#,
+        )
+        .expect("seed tasks.json");
+
+        let created = append_task(&dir, "timestamped objective").expect("append task");
+        assert!(created
+            .created_at
+            .as_deref()
+            .unwrap_or("")
+            .starts_with("unix:"));
+        assert!(created
+            .updated_at
+            .as_deref()
+            .unwrap_or("")
+            .starts_with("unix:"));
+
+        fs::remove_dir_all(&dir).expect("cleanup");
+    }
+
+    #[test]
+    fn old_tasks_without_timestamps_still_parse() {
+        let dir = temp_dir();
+        fs::create_dir_all(&dir).expect("create dir");
+
+        fs::write(
+            dir.join("tasks.json"),
+            r#"{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "task-0001",
+      "goal": "legacy",
+      "status": "queued"
+    }
+  ]
+}
+"#,
+        )
+        .expect("seed tasks.json");
+
+        let loaded = read_tasks(&dir).expect("read legacy task");
+        assert_eq!(loaded.tasks[0].id, "task-0001");
+        assert_eq!(loaded.tasks[0].created_at, None);
+        assert_eq!(loaded.tasks[0].updated_at, None);
 
         fs::remove_dir_all(&dir).expect("cleanup");
     }
@@ -369,11 +470,15 @@ mod tests {
                     id: "task-0001".to_string(),
                     goal: "a".to_string(),
                     status: "queued".to_string(),
+                    created_at: None,
+                    updated_at: None,
                 },
                 TaskItem {
                     id: "task-0001".to_string(),
                     goal: " ".to_string(),
                     status: "bad".to_string(),
+                    created_at: None,
+                    updated_at: None,
                 },
             ],
         };
@@ -411,7 +516,8 @@ mod tests {
         )
         .expect("seed tasks.json");
 
-        let updated = update_task_status(&dir, "task-0001", "done").expect("update status");
+        let updated = update_task_status_with_timestamp(&dir, "task-0001", "done", "unix:200")
+            .expect("update status");
         assert_eq!(updated.id, "task-0001");
         assert_eq!(updated.old_status, "queued");
         assert_eq!(updated.new_status, "done");
@@ -419,7 +525,43 @@ mod tests {
 
         let loaded = read_tasks(&dir).expect("read after update");
         assert_eq!(loaded.tasks[0].status, "done");
+        assert_eq!(loaded.tasks[0].created_at, None);
+        assert_eq!(loaded.tasks[0].updated_at.as_deref(), Some("unix:200"));
         assert_eq!(loaded.tasks[1].status, "blocked");
+
+        fs::remove_dir_all(&dir).expect("cleanup");
+    }
+
+    #[test]
+    fn update_task_status_preserves_created_at_and_updates_updated_at() {
+        let dir = temp_dir();
+        fs::create_dir_all(&dir).expect("create dir");
+
+        fs::write(
+            dir.join("tasks.json"),
+            r#"{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "task-0001",
+      "goal": "first",
+      "status": "queued",
+      "created_at": "unix:100",
+      "updated_at": "unix:100"
+    }
+  ]
+}
+"#,
+        )
+        .expect("seed tasks.json");
+
+        update_task_status_with_timestamp(&dir, "task-0001", "done", "unix:300")
+            .expect("update status");
+
+        let loaded = read_tasks(&dir).expect("read after update");
+        assert_eq!(loaded.tasks[0].status, "done");
+        assert_eq!(loaded.tasks[0].created_at.as_deref(), Some("unix:100"));
+        assert_eq!(loaded.tasks[0].updated_at.as_deref(), Some("unix:300"));
 
         fs::remove_dir_all(&dir).expect("cleanup");
     }

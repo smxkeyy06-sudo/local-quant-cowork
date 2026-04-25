@@ -66,7 +66,9 @@ def build_tasks_md(tasks_data):
     for task in tasks:
         status = task.get("status", "unknown")
         mark = "x" if status == "done" else " "
-        lines.append(f"- [{mark}] `{task.get('id','')}` | **{status}** | {task.get('goal','')}")
+        updated = task.get("updated_at")
+        timestamp = f" | updated: `{updated}`" if updated else ""
+        lines.append(f"- [{mark}] `{task.get('id','')}` | **{status}** | {task.get('goal','')}{timestamp}")
     lines.append("")
     return "\n".join(lines)
 
@@ -101,7 +103,9 @@ def build_dashboard_md(tasks_data):
     lines.append("")
     lines.append("## Latest Tasks")
     for task in latest:
-        lines.append(f"- `{task.get('id','')}` — {task.get('goal','')}")
+        updated = task.get("updated_at")
+        timestamp = f" | updated: `{updated}`" if updated else ""
+        lines.append(f"- `{task.get('id','')}` — {task.get('goal','')}{timestamp}")
     lines.append("")
     return "\n".join(lines)
 

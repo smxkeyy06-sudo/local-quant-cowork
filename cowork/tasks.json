@@ -14,22 +14,26 @@
     {
       "id": "task-0002",
       "goal": "prove workflow step 1",
-      "status": "queued"
+      "status": "done",
+      "updated_at": "unix:1777104494"
     },
     {
       "id": "task-0003",
       "goal": "prove workflow step 2",
-      "status": "queued"
+      "status": "done",
+      "updated_at": "unix:1777150362"
     },
     {
       "id": "task-0004",
       "goal": "doctor follow-up test",
-      "status": "queued"
+      "status": "done",
+      "updated_at": "unix:1777150930"
     },
     {
       "id": "task-0005",
       "goal": "doctor follow-up test",
-      "status": "queued"
+      "status": "done",
+      "updated_at": "unix:1777152062"
     },
     {
       "id": "task-0006",
@@ -50,6 +54,13 @@
       "id": "task-0009",
       "goal": "auto sync test",
       "status": "queued"
+    },
+    {
+      "id": "task-0010",
+      "goal": "timestamp test task",
+      "status": "queued",
+      "created_at": "unix:1777104486",
+      "updated_at": "unix:1777104486"
     }
   ]
 }
