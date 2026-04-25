@@ -1,6 +1,7 @@
 use std::collections::{BTreeMap, HashSet};
 use std::fs;
-use std::path::Path;
+use std::io::Write;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
@@ -19,6 +20,13 @@ pub struct TaskItem {
 pub struct TaskFile {
     pub version: u32,
     pub tasks: Vec<TaskItem>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ContextAppend {
+    pub path: PathBuf,
+    pub timestamp: String,
+    pub note_length: usize,
 }
 
 #[derive(Debug, Clone)]
@@ -69,6 +77,37 @@ pub fn write_tasks(memory_dir: &Path, tasks: &TaskFile) -> Result<()> {
     fs::write(&file, format!("{body}\n"))
         .with_context(|| format!("failed to write tasks file: {}", file.display()))?;
     Ok(())
+}
+
+pub fn append_context_note(
+    memory_dir: &Path,
+    note: &str,
+    timestamp: &str,
+) -> Result<ContextAppend> {
+    let note = note.trim();
+    if note.is_empty() {
+        anyhow::bail!("note is required");
+    }
+    let timestamp = timestamp.trim();
+    if timestamp.is_empty() {
+        anyhow::bail!("timestamp is required");
+    }
+
+    let file = memory_dir.join("context.md");
+    let block = format!("\n\n## Context Note - {timestamp}\n\n{note}\n");
+    fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&file)
+        .with_context(|| format!("failed to open context file: {}", file.display()))?
+        .write_all(block.as_bytes())
+        .with_context(|| format!("failed to append context file: {}", file.display()))?;
+
+    Ok(ContextAppend {
+        path: file,
+        timestamp: timestamp.to_string(),
+        note_length: note.len(),
+    })
 }
 
 pub fn append_task(memory_dir: &Path, goal: &str) -> Result<TaskItem> {
@@ -221,7 +260,10 @@ mod tests {
     use std::path::PathBuf;
     use std::time::{SystemTime, UNIX_EPOCH};
 
-    use super::{append_task, audit_tasks, read_tasks, update_task_status, TaskFile, TaskItem};
+    use super::{
+        append_context_note, append_task, audit_tasks, read_tasks, update_task_status, TaskFile,
+        TaskItem,
+    };
 
     fn temp_dir() -> PathBuf {
         let uniq = SystemTime::now()
@@ -248,6 +290,39 @@ mod tests {
 
         let err = append_task(&dir, "   ").expect_err("should reject empty goal");
         assert!(err.to_string().contains("goal is required"));
+
+        fs::remove_dir_all(&dir).expect("cleanup");
+    }
+
+    #[test]
+    fn append_context_note_preserves_existing_content() {
+        let dir = temp_dir();
+        fs::create_dir_all(&dir).expect("create dir");
+        fs::write(dir.join("context.md"), "# Context\n\nExisting").expect("seed context.md");
+
+        let appended =
+            append_context_note(&dir, "durable context", "unix:123").expect("append context");
+        assert_eq!(appended.path, dir.join("context.md"));
+        assert_eq!(appended.timestamp, "unix:123");
+        assert_eq!(appended.note_length, "durable context".len());
+
+        let body = fs::read_to_string(dir.join("context.md")).expect("read context.md");
+
+        assert!(body.starts_with("# Context\n\nExisting"));
+        assert!(body.contains("## Context Note - unix:123"));
+        assert!(body.contains("durable context"));
+
+        fs::remove_dir_all(&dir).expect("cleanup");
+    }
+
+    #[test]
+    fn append_context_note_rejects_empty_note() {
+        let dir = temp_dir();
+        fs::create_dir_all(&dir).expect("create dir");
+
+        let err = append_context_note(&dir, "   ", "unix:123")
+            .expect_err("should reject empty context note");
+        assert!(err.to_string().contains("note is required"));
 
         fs::remove_dir_all(&dir).expect("cleanup");
     }

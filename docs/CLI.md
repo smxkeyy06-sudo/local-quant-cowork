@@ -4,6 +4,12 @@
 - Prints repository location and active prompt/role profile.
 - Intentionally non-interactive in this scaffold pass.
 
+## `cowork context "<note>"`
+- Requires a non-empty `<note>` argument.
+- Appends a timestamped markdown note to `cowork/context.md`.
+- Prints a JSON success result with `context_file`, `timestamp`, and `note_length`.
+- If `scripts/sync_obsidian.py` exists, attempts to run it after append; sync failures are warnings and do not fail context append.
+
 ## `cowork task "<goal>"`
 - Requires a non-empty `<goal>` argument (returns non-zero on missing goal).
 - Loads and validates `cowork/tasks.json`.

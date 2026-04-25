@@ -8,11 +8,12 @@
 
 ## Commands
 - `cowork chat`
+- `cowork context "<note>"`
 - `cowork task "<goal>"`
 - `cowork task-status <task-id> <status>`
 - `cowork tasks`
 - `cowork doctor`
 
 ## Obsidian sync
-- task append and status updates auto-run `scripts/sync_obsidian.py` when present
+- context append, task append, and status updates auto-run `scripts/sync_obsidian.py` when present
 - generated files: `Dashboard.md`, `Tasks.md`, `Context.md`

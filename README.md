@@ -11,11 +11,12 @@ Focused local-first cowork AI scaffold for a Rust-based quant coordination syste
 ## Commands
 ```bash
 cowork chat
+cowork context "<note>"
 cowork task "<goal>"
 cowork task-status <task-id> <status>
 cowork tasks
 cowork doctor
 ```
 
-Task append and status updates auto-run `scripts/sync_obsidian.py` when
-present. Obsidian sync writes `Dashboard.md`, `Tasks.md`, and `Context.md`.
+Context append, task append, and status updates auto-run `scripts/sync_obsidian.py`
+when present. Obsidian sync writes `Dashboard.md`, `Tasks.md`, and `Context.md`.
