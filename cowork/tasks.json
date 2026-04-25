@@ -38,7 +38,14 @@
     {
       "id": "task-0006",
       "goal": "doctor patch verification",
-      "status": "queued"
+      "status": "queued",
+      "updated_at": "unix:1777154562",
+      "notes": [
+        {
+          "timestamp": "unix:1777154562",
+          "text": "task note test"
+        }
+      ]
     },
     {
       "id": "task-0007",

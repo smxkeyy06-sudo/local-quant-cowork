@@ -17,7 +17,15 @@ pub fn run(runtime: &Runtime) -> Result<()> {
             .as_deref()
             .map(|updated_at| format!(" updated:{updated_at}"))
             .unwrap_or_default();
-        println!("- {} [{}] {}{}", task.id, task.status, task.goal, timestamp);
+        let notes = task
+            .notes
+            .as_ref()
+            .map(|notes| format!(" notes:{}", notes.len()))
+            .unwrap_or_default();
+        println!(
+            "- {} [{}] {}{}{}",
+            task.id, task.status, task.goal, timestamp, notes
+        );
     }
 
     Ok(())

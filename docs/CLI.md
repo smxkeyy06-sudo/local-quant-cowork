@@ -18,6 +18,13 @@
 - If `scripts/sync_obsidian.py` exists, attempts to run it after append; sync failures are warnings and do not fail task append.
 - Obsidian sync writes `Dashboard.md`, `Tasks.md`, and `Context.md`.
 
+## `cowork task-note <task-id> "<note>"`
+- Requires an existing `<task-id>` and a non-empty `<note>`.
+- Appends a timestamped note to the matching task.
+- Preserves existing notes and `created_at`, updates `updated_at`, and writes pretty JSON back to `cowork/tasks.json`.
+- Prints a JSON success result with `id`, `note_timestamp`, `note_length`, and `total_notes`.
+- If `scripts/sync_obsidian.py` exists, attempts to run it after append; sync failures are warnings and do not fail note append.
+
 ## `cowork task-status <task-id> <status>`
 - Requires an existing `<task-id>` and a known `<status>`.
 - Allowed statuses: `queued`, `active`, `done`, `blocked`.
@@ -27,7 +34,7 @@
 
 ## `cowork tasks`
 - Loads and validates `cowork/tasks.json`.
-- Prints total task count, counts by status, and each task. Shows `updated_at` when present.
+- Prints total task count, counts by status, and each task. Shows `updated_at` and note count when present.
 
 ## `cowork doctor`
 - Reports repo root and memory directory.

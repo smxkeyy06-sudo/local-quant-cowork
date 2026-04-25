@@ -13,6 +13,7 @@ Focused local-first cowork AI scaffold for a Rust-based quant coordination syste
 cowork chat
 cowork context "<note>"
 cowork task "<goal>"
+cowork task-note <task-id> "<note>"
 cowork task-status <task-id> <status>
 cowork tasks
 cowork doctor

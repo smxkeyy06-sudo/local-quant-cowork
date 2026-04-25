@@ -1,6 +1,6 @@
 use anyhow::Result;
 
-use crate::commands::{chat, context, doctor, task, task_status, tasks};
+use crate::commands::{chat, context, doctor, task, task_note, task_status, tasks};
 use crate::runtime::Runtime;
 
 pub fn run(args: Vec<String>) -> Result<()> {
@@ -10,6 +10,11 @@ pub fn run(args: Vec<String>) -> Result<()> {
         Some("chat") => chat::run(&runtime),
         Some("context") => context::run(&runtime, args.get(2).map(String::as_str)),
         Some("task") => task::run(&runtime, args.get(2).map(String::as_str)),
+        Some("task-note") => task_note::run(
+            &runtime,
+            args.get(2).map(String::as_str),
+            args.get(3).map(String::as_str),
+        ),
         Some("task-status") => task_status::run(
             &runtime,
             args.get(2).map(String::as_str),
@@ -18,7 +23,7 @@ pub fn run(args: Vec<String>) -> Result<()> {
         Some("tasks") => tasks::run(&runtime),
         Some("doctor") => doctor::run(&runtime),
         _ => {
-            println!("Usage: cowork <chat|context|task|task-status|tasks|doctor> [args]");
+            println!("Usage: cowork <chat|context|task|task-note|task-status|tasks|doctor> [args]");
             Ok(())
         }
     }

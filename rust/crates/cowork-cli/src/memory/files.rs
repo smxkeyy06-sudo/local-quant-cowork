@@ -19,6 +19,14 @@ pub struct TaskItem {
     pub created_at: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub notes: Option<Vec<TaskNote>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TaskNote {
+    pub timestamp: String,
+    pub text: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -40,6 +48,14 @@ pub struct TaskStatusUpdate {
     pub old_status: String,
     pub new_status: String,
     pub goal: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct TaskNoteAppend {
+    pub id: String,
+    pub note_timestamp: String,
+    pub note_length: usize,
+    pub total_notes: usize,
 }
 
 #[derive(Debug, Clone)]
@@ -138,12 +154,65 @@ fn append_task_with_timestamp(memory_dir: &Path, goal: &str, timestamp: &str) ->
         status: "queued".to_string(),
         created_at: Some(timestamp.to_string()),
         updated_at: Some(timestamp.to_string()),
+        notes: None,
     };
 
     tasks.tasks.push(new_task.clone());
     write_tasks(memory_dir, &tasks)?;
 
     Ok(new_task)
+}
+
+pub fn append_task_note(memory_dir: &Path, task_id: &str, note: &str) -> Result<TaskNoteAppend> {
+    append_task_note_with_timestamp(memory_dir, task_id, note, &unix_timestamp()?)
+}
+
+fn append_task_note_with_timestamp(
+    memory_dir: &Path,
+    task_id: &str,
+    note: &str,
+    timestamp: &str,
+) -> Result<TaskNoteAppend> {
+    let task_id = task_id.trim();
+    if task_id.is_empty() {
+        anyhow::bail!("task id is required");
+    }
+
+    let note = note.trim();
+    if note.is_empty() {
+        anyhow::bail!("note is required");
+    }
+
+    let timestamp = timestamp.trim();
+    if timestamp.is_empty() {
+        anyhow::bail!("timestamp is required");
+    }
+
+    let mut tasks = read_tasks(memory_dir)?;
+    let task = tasks
+        .tasks
+        .iter_mut()
+        .find(|task| task.id == task_id)
+        .with_context(|| format!("task id not found: {task_id}"))?;
+
+    let notes = task.notes.get_or_insert_with(Vec::new);
+    notes.push(TaskNote {
+        timestamp: timestamp.to_string(),
+        text: note.to_string(),
+    });
+    let total_notes = notes.len();
+    task.updated_at = Some(timestamp.to_string());
+
+    let appended = TaskNoteAppend {
+        id: task.id.clone(),
+        note_timestamp: timestamp.to_string(),
+        note_length: note.len(),
+        total_notes,
+    };
+
+    write_tasks(memory_dir, &tasks)?;
+
+    Ok(appended)
 }
 
 pub fn update_task_status(
@@ -298,8 +367,9 @@ mod tests {
     use std::time::{SystemTime, UNIX_EPOCH};
 
     use super::{
-        append_context_note, append_task, append_task_with_timestamp, audit_tasks, read_tasks,
-        update_task_status, update_task_status_with_timestamp, TaskFile, TaskItem,
+        append_context_note, append_task, append_task_note, append_task_note_with_timestamp,
+        append_task_with_timestamp, audit_tasks, read_tasks, update_task_status,
+        update_task_status_with_timestamp, TaskFile, TaskItem,
     };
 
     fn temp_dir() -> PathBuf {
@@ -457,6 +527,145 @@ mod tests {
         assert_eq!(loaded.tasks[0].id, "task-0001");
         assert_eq!(loaded.tasks[0].created_at, None);
         assert_eq!(loaded.tasks[0].updated_at, None);
+        assert_eq!(loaded.tasks[0].notes, None);
+
+        fs::remove_dir_all(&dir).expect("cleanup");
+    }
+
+    #[test]
+    fn old_tasks_without_notes_still_parse() {
+        let dir = temp_dir();
+        fs::create_dir_all(&dir).expect("create dir");
+
+        fs::write(
+            dir.join("tasks.json"),
+            r#"{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "task-0001",
+      "goal": "legacy",
+      "status": "queued",
+      "created_at": "unix:100",
+      "updated_at": "unix:100"
+    }
+  ]
+}
+"#,
+        )
+        .expect("seed tasks.json");
+
+        let loaded = read_tasks(&dir).expect("read legacy task");
+        assert_eq!(loaded.tasks[0].notes, None);
+
+        fs::remove_dir_all(&dir).expect("cleanup");
+    }
+
+    #[test]
+    fn append_task_note_adds_first_note_and_updates_timestamp() {
+        let dir = temp_dir();
+        fs::create_dir_all(&dir).expect("create dir");
+
+        fs::write(
+            dir.join("tasks.json"),
+            r#"{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "task-0001",
+      "goal": "first",
+      "status": "queued",
+      "created_at": "unix:100",
+      "updated_at": "unix:100"
+    }
+  ]
+}
+"#,
+        )
+        .expect("seed tasks.json");
+
+        let appended = append_task_note_with_timestamp(&dir, "task-0001", "first note", "unix:200")
+            .expect("append note");
+        assert_eq!(appended.id, "task-0001");
+        assert_eq!(appended.note_timestamp, "unix:200");
+        assert_eq!(appended.note_length, "first note".len());
+        assert_eq!(appended.total_notes, 1);
+
+        let loaded = read_tasks(&dir).expect("read after note");
+        let notes = loaded.tasks[0].notes.as_ref().expect("notes");
+        assert_eq!(loaded.tasks[0].created_at.as_deref(), Some("unix:100"));
+        assert_eq!(loaded.tasks[0].updated_at.as_deref(), Some("unix:200"));
+        assert_eq!(notes.len(), 1);
+        assert_eq!(notes[0].timestamp, "unix:200");
+        assert_eq!(notes[0].text, "first note");
+
+        fs::remove_dir_all(&dir).expect("cleanup");
+    }
+
+    #[test]
+    fn append_task_note_preserves_existing_notes() {
+        let dir = temp_dir();
+        fs::create_dir_all(&dir).expect("create dir");
+
+        fs::write(
+            dir.join("tasks.json"),
+            r#"{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "task-0001",
+      "goal": "first",
+      "status": "queued",
+      "created_at": "unix:100",
+      "updated_at": "unix:200",
+      "notes": [
+        {
+          "timestamp": "unix:200",
+          "text": "first note"
+        }
+      ]
+    }
+  ]
+}
+"#,
+        )
+        .expect("seed tasks.json");
+
+        let appended =
+            append_task_note_with_timestamp(&dir, "task-0001", "second note", "unix:300")
+                .expect("append note");
+        assert_eq!(appended.total_notes, 2);
+
+        let loaded = read_tasks(&dir).expect("read after note");
+        let notes = loaded.tasks[0].notes.as_ref().expect("notes");
+        assert_eq!(loaded.tasks[0].created_at.as_deref(), Some("unix:100"));
+        assert_eq!(loaded.tasks[0].updated_at.as_deref(), Some("unix:300"));
+        assert_eq!(notes.len(), 2);
+        assert_eq!(notes[0].text, "first note");
+        assert_eq!(notes[1].timestamp, "unix:300");
+        assert_eq!(notes[1].text, "second note");
+
+        fs::remove_dir_all(&dir).expect("cleanup");
+    }
+
+    #[test]
+    fn append_task_note_missing_task_id_errors() {
+        let dir = temp_dir();
+        fs::create_dir_all(&dir).expect("create dir");
+
+        fs::write(
+            dir.join("tasks.json"),
+            r#"{
+  "version": 1,
+  "tasks": []
+}
+"#,
+        )
+        .expect("seed tasks.json");
+
+        let err = append_task_note(&dir, "missing-task", "note")
+            .expect_err("should reject missing task id");
+        assert!(err.to_string().contains("task id not found: missing-task"));
 
         fs::remove_dir_all(&dir).expect("cleanup");
     }
@@ -472,6 +681,7 @@ mod tests {
                     status: "queued".to_string(),
                     created_at: None,
                     updated_at: None,
+                    notes: None,
                 },
                 TaskItem {
                     id: "task-0001".to_string(),
@@ -479,6 +689,7 @@ mod tests {
                     status: "bad".to_string(),
                     created_at: None,
                     updated_at: None,
+                    notes: None,
                 },
             ],
         };
