@@ -103,6 +103,8 @@ pub fn run(runtime: &Runtime) -> Result<()> {
     println!("env.COWORK_DATA_DIR: {env_data_dir}");
 
     let tools = registry::default_tools();
+    let _tool_descriptions_are_configured = tools.iter().all(|tool| !tool.description.is_empty());
+
     println!("tool_names:");
     for tool in tools {
         println!("- {}", tool.name);

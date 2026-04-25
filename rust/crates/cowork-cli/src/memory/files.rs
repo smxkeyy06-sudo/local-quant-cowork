@@ -38,11 +38,6 @@ impl TaskAudit {
     }
 }
 
-pub fn read_text(memory_dir: &Path, name: &str) -> Result<String> {
-    let file = memory_dir.join(name);
-    fs::read_to_string(&file).with_context(|| format!("failed to read file: {}", file.display()))
-}
-
 pub fn parse_tasks(memory_dir: &Path) -> Result<TaskFile> {
     let file = memory_dir.join("tasks.json");
     let raw = fs::read_to_string(&file)
