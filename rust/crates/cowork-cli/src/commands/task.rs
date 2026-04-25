@@ -36,7 +36,7 @@ pub fn run(runtime: &Runtime, goal: Option<&str>) -> Result<()> {
     Ok(())
 }
 
-fn try_obsidian_sync(runtime: &Runtime) {
+pub(crate) fn try_obsidian_sync(runtime: &Runtime) {
     let sync_script = runtime.config.repo_file("scripts/sync_obsidian.py");
     if !sync_script.is_file() {
         return;

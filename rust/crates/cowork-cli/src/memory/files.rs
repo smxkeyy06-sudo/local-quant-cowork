@@ -22,6 +22,14 @@ pub struct TaskFile {
 }
 
 #[derive(Debug, Clone)]
+pub struct TaskStatusUpdate {
+    pub id: String,
+    pub old_status: String,
+    pub new_status: String,
+    pub goal: String,
+}
+
+#[derive(Debug, Clone)]
 pub struct TaskAudit {
     pub total: usize,
     pub status_counts: BTreeMap<String, usize>,
@@ -82,6 +90,44 @@ pub fn append_task(memory_dir: &Path, goal: &str) -> Result<TaskItem> {
     write_tasks(memory_dir, &tasks)?;
 
     Ok(new_task)
+}
+
+pub fn update_task_status(
+    memory_dir: &Path,
+    task_id: &str,
+    status: &str,
+) -> Result<TaskStatusUpdate> {
+    let task_id = task_id.trim();
+    if task_id.is_empty() {
+        anyhow::bail!("task id is required");
+    }
+
+    let status = status.trim();
+    if !VALID_TASK_STATUSES.contains(&status) {
+        anyhow::bail!(
+            "invalid task status: {status} (allowed: {})",
+            VALID_TASK_STATUSES.join(", ")
+        );
+    }
+
+    let mut tasks = read_tasks(memory_dir)?;
+    let task = tasks
+        .tasks
+        .iter_mut()
+        .find(|task| task.id == task_id)
+        .with_context(|| format!("task id not found: {task_id}"))?;
+
+    let updated = TaskStatusUpdate {
+        id: task.id.clone(),
+        old_status: task.status.clone(),
+        new_status: status.to_string(),
+        goal: task.goal.clone(),
+    };
+
+    task.status = status.to_string();
+    write_tasks(memory_dir, &tasks)?;
+
+    Ok(updated)
 }
 
 pub fn audit_tasks(tasks: &TaskFile) -> TaskAudit {
@@ -175,7 +221,7 @@ mod tests {
     use std::path::PathBuf;
     use std::time::{SystemTime, UNIX_EPOCH};
 
-    use super::{append_task, audit_tasks, read_tasks, TaskFile, TaskItem};
+    use super::{append_task, audit_tasks, read_tasks, update_task_status, TaskFile, TaskItem};
 
     fn temp_dir() -> PathBuf {
         let uniq = SystemTime::now()
@@ -262,5 +308,75 @@ mod tests {
         assert_eq!(audit.duplicate_ids, vec!["task-0001"]);
         assert_eq!(audit.invalid_statuses, vec!["task-0001:bad"]);
         assert_eq!(audit.empty_goal_ids, vec!["task-0001"]);
+    }
+
+    #[test]
+    fn update_task_status_persists_matching_task_only() {
+        let dir = temp_dir();
+        fs::create_dir_all(&dir).expect("create dir");
+
+        fs::write(
+            dir.join("tasks.json"),
+            r#"{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "task-0001",
+      "goal": "first",
+      "status": "queued"
+    },
+    {
+      "id": "task-0002",
+      "goal": "second",
+      "status": "blocked"
+    }
+  ]
+}
+"#,
+        )
+        .expect("seed tasks.json");
+
+        let updated = update_task_status(&dir, "task-0001", "done").expect("update status");
+        assert_eq!(updated.id, "task-0001");
+        assert_eq!(updated.old_status, "queued");
+        assert_eq!(updated.new_status, "done");
+        assert_eq!(updated.goal, "first");
+
+        let loaded = read_tasks(&dir).expect("read after update");
+        assert_eq!(loaded.tasks[0].status, "done");
+        assert_eq!(loaded.tasks[1].status, "blocked");
+
+        fs::remove_dir_all(&dir).expect("cleanup");
+    }
+
+    #[test]
+    fn update_task_status_rejects_invalid_status() {
+        let dir = temp_dir();
+        fs::create_dir_all(&dir).expect("create dir");
+
+        fs::write(
+            dir.join("tasks.json"),
+            r#"{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "task-0001",
+      "goal": "first",
+      "status": "queued"
+    }
+  ]
+}
+"#,
+        )
+        .expect("seed tasks.json");
+
+        let err = update_task_status(&dir, "task-0001", "waiting")
+            .expect_err("should reject invalid status");
+        assert!(err.to_string().contains("invalid task status"));
+
+        let loaded = read_tasks(&dir).expect("read after failed update");
+        assert_eq!(loaded.tasks[0].status, "queued");
+
+        fs::remove_dir_all(&dir).expect("cleanup");
     }
 }
