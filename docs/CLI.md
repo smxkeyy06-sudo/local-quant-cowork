@@ -1,7 +1,7 @@
 # CLI Contract
 
 ## `cowork chat`
-- Prints repository location, active prompt/role profile, and visible tool names.
+- Prints repository location and active prompt/role profile.
 - Intentionally non-interactive in this scaffold pass.
 
 ## `cowork task "<goal>"`
@@ -10,6 +10,11 @@
 - Appends a new queued task and writes pretty JSON back to `cowork/tasks.json`.
 - Prints a JSON success result with `id`, `goal`, `status`, and `total_task_count`.
 - If `scripts/sync_obsidian.py` exists, attempts to run it after append; sync failures are warnings and do not fail task append.
+- Obsidian sync writes `Dashboard.md`, `Tasks.md`, and `Context.md`.
+
+## `cowork tasks`
+- Loads and validates `cowork/tasks.json`.
+- Prints total task count, counts by status, and each task.
 
 ## `cowork doctor`
 - Reports repo root and memory directory.

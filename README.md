@@ -14,3 +14,8 @@ cowork chat
 cowork task "<goal>"
 cowork tasks
 cowork doctor
+```
+
+`cowork task "<goal>"` appends a queued task and auto-runs
+`scripts/sync_obsidian.py` when present. Obsidian sync writes
+`Dashboard.md`, `Tasks.md`, and `Context.md`.
