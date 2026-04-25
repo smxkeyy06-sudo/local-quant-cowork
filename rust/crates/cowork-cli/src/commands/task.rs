@@ -57,7 +57,19 @@ pub(crate) fn try_obsidian_sync(runtime: &Runtime) {
                 .code()
                 .map(|c| c.to_string())
                 .unwrap_or_else(|| "terminated".to_string());
+
+            let stderr = String::from_utf8_lossy(&out.stderr).trim().to_string();
+            let stdout = String::from_utf8_lossy(&out.stdout).trim().to_string();
+
             eprintln!("obsidian_sync: warning (exit {code})");
+
+            if !stderr.is_empty() {
+                eprintln!("obsidian_sync stderr: {stderr}");
+            }
+
+            if !stdout.is_empty() {
+                eprintln!("obsidian_sync stdout: {stdout}");
+            }
         }
         Err(err) => {
             eprintln!("obsidian_sync: warning ({err})");
