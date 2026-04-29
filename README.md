@@ -24,3 +24,6 @@ Context append, task append, task notes, and status updates auto-run
 `scripts/sync_obsidian.py` when present. Obsidian sync writes `Dashboard.md`,
 `Tasks.md`, and `Context.md`; the dashboard summarizes task status, focus
 queues, recent completions, and latest context.
+
+Run `scripts/generate_daily.py` to create or refresh `Journal/YYYY-MM-DD.md`
+in the configured Obsidian vault.

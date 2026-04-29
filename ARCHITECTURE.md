@@ -19,3 +19,4 @@
 - context append, task append, task notes, and status updates auto-run `scripts/sync_obsidian.py` when present
 - generated files: `Dashboard.md`, `Tasks.md`, `Context.md`
 - `Dashboard.md` summarizes status counts, active/blocked tasks, recent queue movement, and latest context
+- `scripts/generate_daily.py` writes `Journal/YYYY-MM-DD.md` daily notes in the configured vault
