@@ -16,3 +16,7 @@ current task queues.
 
 Run `python3 scripts/generate_daily.py` to create or refresh today's Obsidian
 journal note at `Journal/YYYY-MM-DD.md`.
+
+Run `python3 scripts/check_obsidian.py` to verify that `OBSIDIAN_VAULT_DIR` is
+set, exists, and allows temporary write/delete access without modifying vault
+notes.
