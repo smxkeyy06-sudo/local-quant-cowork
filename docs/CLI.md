@@ -35,6 +35,8 @@
 ## `cowork tasks`
 - Loads and validates `cowork/tasks.json`.
 - Prints total task count, counts by status, and each task. Shows `updated_at` and note count when present.
+- Supports optional status filtering with `cowork tasks --status <queued|active|done|blocked>`.
+- Filtered output prints selected status, total matching tasks, and each matching task.
 
 ## `cowork doctor`
 - Reports repo root and memory directory.

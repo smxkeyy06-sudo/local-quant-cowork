@@ -16,6 +16,7 @@ cowork task "<goal>"
 cowork task-note <task-id> "<note>"
 cowork task-status <task-id> <status>
 cowork tasks
+cowork tasks --status queued
 cowork doctor
 ```
 

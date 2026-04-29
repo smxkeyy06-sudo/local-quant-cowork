@@ -20,7 +20,7 @@ pub fn run(args: Vec<String>) -> Result<()> {
             args.get(2).map(String::as_str),
             args.get(3).map(String::as_str),
         ),
-        Some("tasks") => tasks::run(&runtime),
+        Some("tasks") => tasks::run(&runtime, &args[2..]),
         Some("doctor") => doctor::run(&runtime),
         _ => {
             println!("Usage: cowork <chat|context|task|task-note|task-status|tasks|doctor> [args]");
