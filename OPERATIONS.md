@@ -9,5 +9,7 @@
 6. list tasks with `cowork tasks` or `cowork tasks --status queued`
 7. commit working changes
 
-Context append, task append, and status updates auto-run `scripts/sync_obsidian.py`
-when present. Obsidian sync writes `Dashboard.md`, `Tasks.md`, and `Context.md`.
+Context append, task append, task notes, and status updates auto-run
+`scripts/sync_obsidian.py` when present. Obsidian sync writes `Dashboard.md`,
+`Tasks.md`, and `Context.md`; the dashboard summarizes status counts and the
+current task queues.

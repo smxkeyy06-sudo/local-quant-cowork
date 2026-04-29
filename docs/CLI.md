@@ -24,6 +24,7 @@
 - Preserves existing notes and `created_at`, updates `updated_at`, and writes pretty JSON back to `cowork/tasks.json`.
 - Prints a JSON success result with `id`, `note_timestamp`, `note_length`, and `total_notes`.
 - If `scripts/sync_obsidian.py` exists, attempts to run it after append; sync failures are warnings and do not fail note append.
+- Obsidian sync writes `Dashboard.md`, `Tasks.md`, and `Context.md`; `Dashboard.md` includes status counts, task sections, and latest context.
 
 ## `cowork task-status <task-id> <status>`
 - Requires an existing `<task-id>` and a known `<status>`.

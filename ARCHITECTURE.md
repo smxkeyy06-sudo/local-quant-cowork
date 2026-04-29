@@ -16,5 +16,6 @@
 - `cowork doctor`
 
 ## Obsidian sync
-- context append, task append, and status updates auto-run `scripts/sync_obsidian.py` when present
+- context append, task append, task notes, and status updates auto-run `scripts/sync_obsidian.py` when present
 - generated files: `Dashboard.md`, `Tasks.md`, `Context.md`
+- `Dashboard.md` summarizes status counts, active/blocked tasks, recent queue movement, and latest context
