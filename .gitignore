@@ -4,3 +4,11 @@
 # Rust build outputs
 rust/target/
 **/target/
+
+# Python generated files
+__pycache__/
+*.py[cod]
+.pytest_cache/
+build/
+dist/
+*.egg-info/
