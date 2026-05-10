@@ -4,11 +4,13 @@
 Local workflow stabilization.
 
 ## Last Completed Pass
-Python generated file ignores.
+Obsidian current state sync.
 
 ## Recent Completed Passes
 - Obsidian vault write check.
 - Python cache/build ignores in `.gitignore`.
+- Current state checkpoint file.
+- Generated Obsidian `CurrentState.md` from `docs/CURRENT_STATE.md`.
 
 ## Verification Baseline
 - `cargo test --workspace` passes.

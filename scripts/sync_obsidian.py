@@ -5,6 +5,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 COWORK_DIR = REPO_ROOT / "cowork"
+CURRENT_STATE_MD = REPO_ROOT / "docs" / "CURRENT_STATE.md"
 
 VAULT_DIR = Path(
     os.environ.get(
@@ -148,6 +149,7 @@ def build_dashboard_md(tasks_data):
     lines.append("## Quick Links")
     lines.append("- [[Tasks]]")
     lines.append("- [[Context]]")
+    lines.append("- [[CurrentState]]")
     lines.append("- [[Current Focus]]")
     lines.append("")
     lines.append("## Task Counts")
@@ -189,10 +191,12 @@ def main():
     tasks_md = build_tasks_md(tasks_data)
     dashboard_md = build_dashboard_md(tasks_data)
     context_md = CONTEXT_MD.read_text(encoding="utf-8") if CONTEXT_MD.exists() else "# Context\n"
+    current_state_md = CURRENT_STATE_MD.read_text(encoding="utf-8") if CURRENT_STATE_MD.exists() else "# Current State\n"
 
     (VAULT_DIR / "Tasks.md").write_text(tasks_md, encoding="utf-8")
     (VAULT_DIR / "Dashboard.md").write_text(dashboard_md, encoding="utf-8")
     (VAULT_DIR / "Context.md").write_text(context_md, encoding="utf-8")
+    (VAULT_DIR / "CurrentState.md").write_text(current_state_md, encoding="utf-8")
 
     print(f"Synced Obsidian vault: {VAULT_DIR}")
 

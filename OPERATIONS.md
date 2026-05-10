@@ -11,7 +11,8 @@
 
 Context append, task append, task notes, and status updates auto-run
 `scripts/sync_obsidian.py` when present. Obsidian sync writes `Dashboard.md`,
-`Tasks.md`, and `Context.md`; the dashboard summarizes status counts and the
+`Tasks.md`, `Context.md`, and `CurrentState.md`; `CurrentState.md` is generated
+from `docs/CURRENT_STATE.md`. The dashboard summarizes status counts and the
 current task queues.
 
 Run `python3 scripts/generate_daily.py` to create or refresh today's Obsidian
