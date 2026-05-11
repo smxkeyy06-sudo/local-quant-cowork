@@ -21,3 +21,11 @@ journal note at `Journal/YYYY-MM-DD.md`.
 Run `python3 scripts/check_obsidian.py` to verify that `OBSIDIAN_VAULT_DIR` is
 set, exists, and allows temporary write/delete access without modifying vault
 notes.
+
+## Checkpoint
+Run `python3 scripts/checkpoint.py --last-pass "<description>" --next-pass "<description>" --commit-message "<message>"`
+from the repository root at the end of a pass. The checkpoint helper verifies
+Obsidian access, syncs the vault, runs `git diff --check`, runs the Rust test
+and doctor checks, updates `docs/CURRENT_STATE.md`, refreshes Obsidian
+`CurrentState.md`, stages intended repo files, and creates a local git commit.
+It does not push; review the commit and run `git push` manually.

@@ -4,22 +4,17 @@
 Local workflow stabilization.
 
 ## Last Completed Pass
-Obsidian current state sync.
-
-## Recent Completed Passes
-- Obsidian vault write check.
-- Python cache/build ignores in `.gitignore`.
-- Current state checkpoint file.
-- Generated Obsidian `CurrentState.md` from `docs/CURRENT_STATE.md`.
+End-of-pass checkpoint helper.
 
 ## Verification Baseline
 - `cargo test --workspace` passes.
 - `cargo run -p cowork-cli -- doctor` passes.
 - `scripts/check_obsidian.py` works.
-- working tree should be clean after checkpoint commit.
+- `scripts/sync_obsidian.py` works.
+- working tree should be clean after commit/push.
 
 ## Next Small Pass
-Add an end-of-session checklist to `OPERATIONS.md`.
+Use checkpoint helper after the next focused pass.
 
 ## Not Now
 - no model/provider integration
