@@ -4,7 +4,7 @@
 Local workflow stabilization.
 
 ## Last Completed Pass
-End-of-pass checkpoint helper.
+Added read-only start-of-session verification helper.
 
 ## Verification Baseline
 - `cargo test --workspace` passes.
@@ -14,7 +14,7 @@ End-of-pass checkpoint helper.
 - working tree should be clean after commit/push.
 
 ## Next Small Pass
-Use checkpoint helper after the next focused pass.
+Use verify_session.py at the start of the next work session and tighten any weak checks found in practice.
 
 ## Not Now
 - no model/provider integration
