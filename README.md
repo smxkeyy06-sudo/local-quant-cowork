@@ -27,3 +27,16 @@ queues, recent completions, and latest context.
 
 Run `scripts/generate_daily.py` to create or refresh `Journal/YYYY-MM-DD.md`
 in the configured Obsidian vault.
+
+## Obsidian plugins
+
+Obsidian remains a generated, readable view; this repo and
+`docs/CURRENT_STATE.md` remain the source of truth. For low-risk use, start
+with Calendar to navigate `Journal/YYYY-MM-DD.md`. Dataview may be useful
+later for read-only dashboards once generated notes have stable
+metadata/frontmatter.
+
+Use Tasks with caution because `cowork/tasks.json` is the task source of truth.
+Avoid Obsidian Git for now so commits, checkpoints, and pushes stay in the WSL
+repo workflow. Plugins should not mutate generated project state or bypass
+`checkpoint.py`.

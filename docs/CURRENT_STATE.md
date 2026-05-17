@@ -4,7 +4,7 @@
 Local workflow stabilization.
 
 ## Last Completed Pass
-Documented standard start-of-session workflow using verify_session.py.
+Documented safe Obsidian plugin guidance.
 
 ## Verification Baseline
 - `cargo test --workspace` passes.
