@@ -4,7 +4,7 @@
 Local workflow stabilization.
 
 ## Last Completed Pass
-Added read-only start-of-session verification helper.
+Strengthened read-only session verifier repo root detection.
 
 ## Verification Baseline
 - `cargo test --workspace` passes.
@@ -14,7 +14,7 @@ Added read-only start-of-session verification helper.
 - working tree should be clean after commit/push.
 
 ## Next Small Pass
-Use verify_session.py at the start of the next work session and tighten any weak checks found in practice.
+Document the standard start-of-session workflow using verify_session.py.
 
 ## Not Now
 - no model/provider integration

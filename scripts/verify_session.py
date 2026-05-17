@@ -55,15 +55,22 @@ def run_read_check(command, cwd):
 
 def check_repo_root(report):
     cwd = Path.cwd().resolve()
-    if REPO_ROOT.exists():
-        detail = f"detected {REPO_ROOT}"
-        if cwd == REPO_ROOT:
-            detail += " from current working directory"
-        else:
-            detail += f" while running from {cwd}"
-        report.pass_("repo root", detail)
+    result = run_read_check(["git", "rev-parse", "--show-toplevel"], REPO_ROOT)
+    if result.returncode != 0:
+        report.fail("repo root", result.stderr.strip() or "git rev-parse --show-toplevel failed")
         return
-    report.fail("repo root", f"could not detect repo root from {__file__}")
+
+    git_repo_root = Path(result.stdout.strip()).resolve()
+    if git_repo_root != REPO_ROOT:
+        report.fail("repo root", f"expected {REPO_ROOT}, git reported {git_repo_root}")
+        return
+
+    detail = f"detected {git_repo_root}"
+    if cwd == REPO_ROOT:
+        detail += " from current working directory"
+    else:
+        detail += f" while running from {cwd}"
+    report.pass_("repo root", detail)
 
 
 def check_file_exists(report, label, path):
