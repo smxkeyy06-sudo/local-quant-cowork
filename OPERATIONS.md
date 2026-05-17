@@ -1,5 +1,21 @@
 # OPERATIONS
 
+## Start Of Session
+```bash
+cd ~/local-quant-cowork
+git pull
+python3 scripts/verify_session.py
+python3 scripts/check_obsidian.py
+python3 scripts/sync_obsidian.py
+git status
+```
+
+`scripts/verify_session.py` is read-only. `scripts/check_obsidian.py` verifies
+Obsidian vault write access, and `scripts/sync_obsidian.py` regenerates the
+Obsidian-readable view. `docs/CURRENT_STATE.md` remains the source checkpoint;
+Obsidian `CurrentState.md` is generated from it. After checkpointing, pushing
+remains manual.
+
 ## Workflow
 1. run `cowork doctor`
 2. append context notes with `cowork context "<note>"`
